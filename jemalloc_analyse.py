@@ -40,14 +40,13 @@ def main():
 
 
 def calc_bin_stats(stats, arena_ID):
-    FMT = '  {0:<6}{1:<10}{2:<13}{3:<9}{4:<15}{5:<8}{6:<7}{7:<8}{8:<17}{9:<8}'
-    KEYS = ('size', 'ind', 'allocated', 'nmalloc', 'ndalloc',
-            'nrequests', 'cur regs', 'regs', 'pgs', 'nfills', 'nflushes', 'newruns', 'reruns', 'cur runs')
+    FMT = '  {0:>3} {1:>9} {2:>8} {3:>9} {4:>12} {5:>12} {6:>9} {7:>7} {8:>7} {9:>15} {10:>8}'
 
     # Scan down to the table
     line = stats.readline()
     while not line.startswith('bins:'):
         line = stats.readline()
+    headers = line.split()[1:]
     line = stats.readline()
     if line.startswith('['):
         line = stats.readline()
@@ -56,16 +55,17 @@ def calc_bin_stats(stats, arena_ID):
     classes = list()
     while not line.startswith('large:'):
         fields = [int(x) for x in line.split()]
-        c = dict(zip(KEYS, fields))
+        c = dict(zip(headers, fields))
 
         # Derive some stats from each class, additional ones (see below) need
         # totals...
         try:
             c['utilization'] = c['allocated'] / (c['size'] * c['regs'] *
-                                                 c['cur runs'])
+                                                 c['curruns'])
         except ZeroDivisionError:
             c['utilization'] = 1
-        c['frag_memory'] = ((c['size'] * c['regs'] * c['cur runs']) -
+        c['alloc_items'] = int(c['allocated'] / c['size'])
+        c['frag_memory'] = ((c['size'] * c['regs'] * c['curruns']) -
                             c['allocated'])
         classes.append(c)
 
@@ -77,10 +77,10 @@ def calc_bin_stats(stats, arena_ID):
 
     print "=== Stats for Arena '{}' ===".format(arena_ID)
     print "small allocation stats:"
-    print FMT.format('bin', 'size (B)', 'regions', 'pages', 'allocated (B)',
+    print FMT.format('bin', 'size (B)', 'regions', 'pages', 'allocated', 'allocated',
                      'cur runs', '', '% of small', '               % of blame',
                      '')
-    print FMT.format('', '', 'per run', 'per run', '', '', 'utilization    ',
+    print FMT.format('', '', 'per run', 'per run', 'items', 'bytes', '', 'utilization    ',
                      'frag memory (B)', '', '')
     print
 
@@ -90,13 +90,13 @@ def calc_bin_stats(stats, arena_ID):
         c['pct_of_blame'] = c['frag_memory'] / total_frag_memory
 
         print FMT.format(c['ind'], c['size'], c['regs'], c['pgs'],
-                         c['allocated'], c['cur runs'],
+                         c['alloc_items'], c['allocated'], c['curruns'],
                          '{:.0f}%'.format(c['utilization'] * 100),
                          '{:.0f}%'.format(c['pct_of_small'] * 100),
                          c['frag_memory'],
                          '{:.0f}%'.format(c['pct_of_blame'] * 100))
     print
-    print FMT.format('total', '', '', '', sizeof_fmt(total_allocated), '', '',
+    print FMT.format('total', '', '', '', '', sizeof_fmt(total_allocated), '', '',
                      '', sizeof_fmt(total_frag_memory), '')
 
 if __name__ == '__main__':
