@@ -19,7 +19,7 @@ def sizeof_fmt(num):
 
 
 def main():
-    with open(sys.argv[1]) as stats:
+    with open(sys.argv[1]) if len(sys.argv) > 1 else sys.stdin as stats:
         line = stats.readline()
         while line:
             if line.startswith('Merged arenas stats:'):
@@ -41,8 +41,8 @@ def main():
 
 def calc_bin_stats(stats, arena_ID):
     FMT = '  {0:<6}{1:<10}{2:<13}{3:<9}{4:<15}{5:<8}{6:<7}{7:<8}{8:<17}{9:<8}'
-    KEYS = ('bin', 'size', 'regs', 'pgs', 'allocated', 'nmalloc', 'ndalloc',
-            'nrequests', 'nfills', 'nflushes', 'newruns', 'reruns', 'cur runs')
+    KEYS = ('size', 'ind', 'allocated', 'nmalloc', 'ndalloc',
+            'nrequests', 'cur regs', 'regs', 'pgs', 'nfills', 'nflushes', 'newruns', 'reruns', 'cur runs')
 
     # Scan down to the table
     line = stats.readline()
@@ -89,7 +89,7 @@ def calc_bin_stats(stats, arena_ID):
         c['pct_of_small'] = c['allocated'] / total_allocated
         c['pct_of_blame'] = c['frag_memory'] / total_frag_memory
 
-        print FMT.format(c['bin'], c['size'], c['regs'], c['pgs'],
+        print FMT.format(c['ind'], c['size'], c['regs'], c['pgs'],
                          c['allocated'], c['cur runs'],
                          '{:.0f}%'.format(c['utilization'] * 100),
                          '{:.0f}%'.format(c['pct_of_small'] * 100),
