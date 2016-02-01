@@ -112,6 +112,10 @@ def calc_bin_stats(stats, arena_ID):
         c['pct_of_small'] = c['allocated'] / total_allocated
         c['pct_of_blame'] = c['frag_memory'] / total_frag_memory
 
+        # Skip empty runs
+        if c['curruns'] == 0:
+            continue
+
         print FMT.format(c['bin'], c['size'], c['regs'], c['pgs'],
                          c['alloc_items'], c['allocated'], c['curruns'],
                          '{:.0f}%'.format(c['utilization'] * 100),
