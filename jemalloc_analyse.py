@@ -86,7 +86,7 @@ def calc_bin_stats(stats, arena_ID):
             c['regs'] = 1 # Only one region per large allocation
             c['pgs'] = c['pages']
             c['utilization'] = 1
-            c['allocated'] = c['size'] * c['pages'] * c['curruns']
+            c['allocated'] = c['size'] * c['curruns']
 
             c['alloc_items'] = c['curruns']
             c['frag_memory'] = 0
