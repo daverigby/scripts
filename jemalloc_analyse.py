@@ -67,6 +67,7 @@ def calc_bin_stats(stats, arena_ID):
         c['alloc_items'] = int(c['allocated'] / c['size'])
         c['frag_memory'] = ((c['size'] * c['regs'] * c['curruns']) -
                             c['allocated'])
+        c['small'] = True
         classes.append(c)
 
         line = stats.readline()
@@ -90,12 +91,14 @@ def calc_bin_stats(stats, arena_ID):
 
             c['alloc_items'] = c['curruns']
             c['frag_memory'] = 0
+            c['small'] = False
             classes.append(c)
 
             line = stats.readline()
 
     # Calculate totals
     total_allocated = sum([c['allocated'] for c in classes])
+    total_allocated_small = sum([c['allocated'] for c in classes if c['small']])
     total_frag_memory = sum([c['frag_memory'] for c in classes])
 
     print "=== Stats for Arena '{}' ===".format(arena_ID)
@@ -109,8 +112,16 @@ def calc_bin_stats(stats, arena_ID):
 
     # Finally, calculate per-class stats which need the totals.
     for c in classes:
-        c['pct_of_small'] = c['allocated'] / total_allocated
-        c['pct_of_blame'] = c['frag_memory'] / total_frag_memory
+        if c['small']:
+            utilization = '{:.0f}%'.format(c['utilization'] * 100)
+            pct_of_small = '{:.0f}%'.format(c['allocated'] * 100 / total_allocated_small)
+            frag_memory = c['frag_memory']
+            pct_of_blame = '{:.0f}%'.format(c['frag_memory'] * 100 / total_frag_memory)
+        else:
+            utilization = '-'
+            pct_of_small = '-'
+            frag_memory = '-'
+            pct_of_blame = '-'
 
         # Skip empty runs
         if c['curruns'] == 0:
@@ -118,10 +129,10 @@ def calc_bin_stats(stats, arena_ID):
 
         print FMT.format(c['bin'], c['size'], c['regs'], c['pgs'],
                          c['alloc_items'], c['allocated'], c['curruns'],
-                         '{:.0f}%'.format(c['utilization'] * 100),
-                         '{:.0f}%'.format(c['pct_of_small'] * 100),
-                         c['frag_memory'],
-                         '{:.0f}%'.format(c['pct_of_blame'] * 100))
+                         utilization,
+                         pct_of_small,
+                         frag_memory,
+                         pct_of_blame)
     print
     print FMT.format('total', '', '', '', '', sizeof_fmt(total_allocated), '', '',
                      '', sizeof_fmt(total_frag_memory), '')
