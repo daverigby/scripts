@@ -71,6 +71,29 @@ def calc_bin_stats(stats, arena_ID):
 
         line = stats.readline()
 
+    if line.startswith('large:'):
+        # Different format for large allocations.
+        headers = line.split()[1:]
+        line = stats.readline()
+        while not line.startswith('--- End jemalloc statistics ---'):
+            if line.startswith('['):
+                line = stats.readline()
+                continue
+            fields = [int(x) for x in line.split()]
+            c = dict(zip(headers, fields))
+
+            c['bin'] = '-'
+            c['regs'] = 1 # Only one region per large allocation
+            c['pgs'] = c['pages']
+            c['utilization'] = 1
+            c['allocated'] = c['size'] * c['pages'] * c['curruns']
+
+            c['alloc_items'] = c['curruns']
+            c['frag_memory'] = 0
+            classes.append(c)
+
+            line = stats.readline()
+
     # Calculate totals
     total_allocated = sum([c['allocated'] for c in classes])
     total_frag_memory = sum([c['frag_memory'] for c in classes])
@@ -89,7 +112,7 @@ def calc_bin_stats(stats, arena_ID):
         c['pct_of_small'] = c['allocated'] / total_allocated
         c['pct_of_blame'] = c['frag_memory'] / total_frag_memory
 
-        print FMT.format(c['ind'], c['size'], c['regs'], c['pgs'],
+        print FMT.format(c['bin'], c['size'], c['regs'], c['pgs'],
                          c['alloc_items'], c['allocated'], c['curruns'],
                          '{:.0f}%'.format(c['utilization'] * 100),
                          '{:.0f}%'.format(c['pct_of_small'] * 100),
